@@ -1,35 +1,57 @@
-# Trabalho da M2 de processamento de imagens
+# Trabalho da M2 de Processamento de Imagens
 
-### Dataset escolhido:
+**Autor:** Eduardo Drux
+**Disciplina:** Processamento de Imagens — UNIVALI
+**Professor:** Felipe Viel
 
-- "Segmentação de Grãos Agrículas"
+## Dataset escolhido
 
-### Fluxo de segmentação escolhido:
+[Seed Images (Kaggle — ddsssss/seed-images)](https://www.kaggle.com/datasets/ddsssss/seed-images) — segmentação de grãos agrícolas.
 
-**SLIC + Otsu por Superpixel**
+## Fluxo de segmentação
 
-**Justificativa:**
-- Fundo uniforme do dataset → histograma bimodal → Otsu encontra limiar ótimo entre grão e fundo
-- SLIC opera no espaço LAB → resistente à variação de brilho entre imagens
-- Otsu por superpixel (regional) é mais robusto que Otsu global em cenas com grãos tocando-se
-- Cobre o critério de "Segmentação com superpixels" (20% da nota)
+**SLIC Superpixels + Otsu por Superpixel** (ambos implementados *from scratch*).
 
-**Pipeline:**
-1. Pré-processamento: RGB → LAB + Grayscale, normalização
-2. Filtro passa-baixa Gaussiano (domínio da frequência / FFT)
-3. SLIC Superpixels — from scratch
-4. Classificação Otsu por Superpixel — from scratch
-5. Morfologia: Abertura + Fechamento + Fill Holes — from scratch
-6. Componentes conectados BFS (contagem de grãos) — from scratch
-7. Avaliação: IoU + Dice Coefficient — from scratch
+```
+RGB → LAB → FFT passa-baixa no b* → feature warmth = b*·gate(L*)
+    → SLIC superpixels → Otsu por superpixel
+    → morfologia (abertura + filtro de área + fill holes + fechamento)
+    → componentes conectados → IoU/Dice/contagem
+```
 
-### Escolher de 3 a 5 imagens;
+## Imagens selecionadas
 
-- Imagens selecionadas:
-  - 0619
-  - 1105
-  - 1113
-  - 1141
-  - 1286
+`0619, 1105, 1113, 1141, 1286` — cobrindo casos fáceis (placa centralizada,
+fundo limpo) e difíceis (vinheta escura, clusters densos de grãos).
 
-> Observação: O único código pronto que pode ser utilizado é o de Domínio da frequência, o restante eu preciso implementar a lógica manualmente
+## Como reproduzir
+
+```bash
+pip install numpy matplotlib pillow scikit-image
+python -m jupyter nbconvert --to notebook --execute --inplace processamento_imagens_m2.ipynb
+```
+
+Ou abrir `processamento_imagens_m2.ipynb` no Jupyter/VS Code/Colab e rodar as células em ordem.
+
+## Estrutura do repositório
+
+```
+.
+├── processamento_imagens_m2.ipynb   ← notebook principal (executável)
+├── RELATORIO.md                     ← relatório completo do projeto
+├── src/pipeline.py                  ← versão modular do código (re-uso opcional)
+├── dataset/
+│   ├── JPEGImages/                  ← imagens originais (.jpg)
+│   └── Annotations/                 ← anotações PASCAL VOC (.xml)
+└── figures/                         ← figuras geradas pelo notebook
+```
+
+## Restrições do enunciado e como atendidas
+
+| Restrição | Atendimento |
+|---|---|
+| Domínio da frequência pode usar biblioteca | Uso `numpy.fft` no filtro Gaussiano |
+| Morfologia: from scratch | Erosão, dilatação, abertura, fechamento e fill_holes implementados manualmente |
+| Segmentação: from scratch | SLIC e Otsu por superpixel implementados manualmente |
+| Sem Deep Learning / U-Net / YOLO | OK — apenas técnicas clássicas |
+| Métricas: IoU, Dice, contagem | Todas implementadas (`iou_score`, `dice_score`, `count_grains_eroded`) |
