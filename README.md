@@ -1,6 +1,6 @@
 # Trabalho da M2 de Processamento de Imagens
 
-**Autor:** Eduardo Drux
+**Autor:** Eduardo Drux e Candido Neto
 **Disciplina:** Processamento de Imagens — UNIVALI
 **Professor:** Felipe Viel
 
@@ -10,7 +10,7 @@
 
 ## Fluxo de segmentação
 
-**SLIC Superpixels + Otsu por Superpixel** (ambos implementados *from scratch*).
+**SLIC Superpixels + Otsu por Superpixel** (ambos implementados _from scratch_).
 
 ```
 RGB → LAB → FFT passa-baixa no b* → feature warmth = b*·gate(L*)
@@ -48,10 +48,10 @@ Ou abrir `processamento_imagens_m2.ipynb` no Jupyter/VS Code/Colab e rodar as c�
 
 ## Restrições do enunciado e como atendidas
 
-| Restrição | Atendimento |
-|---|---|
-| Domínio da frequência pode usar biblioteca | Uso `numpy.fft` no filtro Gaussiano |
-| Morfologia: from scratch | Erosão, dilatação, abertura, fechamento e fill_holes implementados manualmente |
-| Segmentação: from scratch | SLIC e Otsu por superpixel implementados manualmente |
-| Sem Deep Learning / U-Net / YOLO | OK — apenas técnicas clássicas |
-| Métricas: IoU, Dice, contagem | Todas implementadas (`iou_score`, `dice_score`, `count_grains_eroded`) |
+| Restrição                                  | Atendimento                                                                    |
+| ------------------------------------------ | ------------------------------------------------------------------------------ |
+| Domínio da frequência pode usar biblioteca | Uso `numpy.fft` no filtro Gaussiano                                            |
+| Morfologia: from scratch                   | Erosão, dilatação, abertura, fechamento e fill_holes implementados manualmente |
+| Segmentação: from scratch                  | SLIC e Otsu por superpixel implementados manualmente                           |
+| Sem Deep Learning / U-Net / YOLO           | OK — apenas técnicas clássicas                                                 |
+| Métricas: IoU, Dice, contagem              | Todas implementadas (`iou_score`, `dice_score`, `count_grains_eroded`)         |
