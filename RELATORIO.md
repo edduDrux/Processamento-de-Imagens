@@ -1,6 +1,6 @@
 # Relatório — Projeto M2 de Processamento de Imagens
 
-**Autor:** Eduardo Drux
+**Autores:** Eduardo Sartori e Candido Fachini
 **Disciplina:** Processamento de Imagens
 **Professor:** Felipe Viel
 **Curso:** Ciência da Computação — UNIVALI
@@ -12,8 +12,12 @@
 - **Tema:** Pipeline completo de processamento digital de imagens para segmentação
   automática de grãos agrícolas.
 - **Dataset escolhido:** *Seed Images* (Kaggle — `ddsssss/seed-images`).
-- **Algoritmo de segmentação principal:** SLIC Superpixels + Otsu por Superpixel,
-  ambos implementados *from scratch*.
+- **Algoritmo de segmentação:** escolhi o *Otsu por Superpixel* (um dos propostos no
+  enunciado) — tiro a média da feature dentro de cada superpixel e separo grão de fundo
+  pelo limiar do Otsu. Os superpixels quem gera é o *SLIC*. Os dois são *from scratch*.
+  Vale frisar: o SLIC não é um segundo algoritmo de segmentação, ele só gera os
+  superpixels que o Otsu por Superpixel usa de entrada (sozinho ele só dá
+  oversegmentação, não uma máscara grão/fundo).
 - **Arquivos entregues:**
   - `processamento_imagens_m2.ipynb` — notebook executável com toda a explicação e código.
   - `src/pipeline.py` — versão modular do mesmo código (para reaproveitamento).
@@ -101,9 +105,11 @@ A escolha de cada etapa e a ordem foram pensadas explicitamente para o problema:
    quanto o Otsu (criando histograma menos bimodal). Suavizando o b\* antes,
    reduzo essas duas fontes de erro de uma vez.
 
-3. **Feature *warmth gated by L\** antes do Otsu** — Esse foi o passo de maior
-   ganho prático (subiu o IoU em imagens difíceis de ~0.15 pra ~0.50). Ele anula
-   o sinal nas regiões muito escuras (vinheta) sem afetar o resto.
+3. **Feature *warmth gated by L\** antes do Otsu** — É a etapa que resolve as imagens
+   com vinheta escura (1113, 1141), anulando o sinal nas regiões muito escuras pra elas
+   não serem lidas como grão. É um trade-off: medindo IoU contra o GT aproximado, o gate
+   só melhora mesmo essas duas (1113 0.477→0.509, 1141 0.377→0.412) e baixa um pouco nas
+   imagens limpas — mantenho pelo ganho de robustez nos casos difíceis.
 
 4. **SLIC + Otsu por superpixel** — Em vez de Otsu pixel-a-pixel, a média
    intra-superpixel pré-filtra ruído e gera um histograma muito mais bimodal.
@@ -175,8 +181,9 @@ def warmth_feature(img_lab, l_low=20.0, l_high=40.0):
     return b * gate
 ```
 
-Foi o passo de maior impacto no IoU. Sem o gate, imagens com vinheta escura
-tinham IoU ≈ 0.15. Com o gate, ≈ 0.50.
+O gate serve pras imagens com vinheta escura: sem ele, a borda escura (b\* ambíguo) é
+classificada como grão. Medindo IoU, o ganho aparece só nessas imagens (1113 0.477→0.509,
+1141 0.377→0.412); nas limpas ele custa um pouco de IoU, mas vale pela robustez.
 
 ### 5.3 SLIC Superpixels (from scratch — trecho principal)
 
@@ -303,9 +310,10 @@ Numa máquina típica, o pipeline completo (5 imagens em sequência, 640×360 px
 
 ### 7.1 O que funcionou bem
 
-- **Feature `b* · gate(L*)`** — foi o passo de maior ganho prático. Em imagens
-  com vinheta escura (1113), o IoU subiu de ~0.15 pra ~0.50. A lição é que,
-  quando o b\* sozinho dá ambiguidade, combinar com a luminosidade resolve.
+- **Feature `b* · gate(L*)`** — resolveu as imagens com vinheta escura (1113, 1141),
+  onde o b\* da borda escura era confundido com grão. A lição é que, quando o b\* sozinho
+  dá ambiguidade nessas regiões, combinar com a luminosidade ajuda. É um trade-off (só
+  melhora o IoU nessas duas imagens e baixa um pouco nas limpas), mas vale pela robustez.
 
 - **SLIC com 300 superpixels** — gera regiões compactas e seguindo bem as bordas
   dos grãos. Visualmente, a separação grão/fundo no nível do superpixel é
@@ -345,13 +353,13 @@ Numa máquina típica, o pipeline completo (5 imagens em sequência, 640×360 px
 
 ### 7.3 Impacto de cada etapa (ablação informal)
 
-| Etapa removida | Efeito observado |
+| Etapa removida | Efeito observado (IoU médio cheio = 0.477) |
 |---|---|
-| Sem filtro de frequência | IoU cai ~5% — SLIC vira ruidoso |
-| Sem gate(L\*) | IoU cai ~15% em imagens com vinheta (chega a -30% em 1113) |
-| Sem fill_holes | IoU cai ~3% — poucos buracos internos |
-| Sem `max_area` no filtro | IoU cai >30% — anel da placa contamina tudo |
-| Sem erosão pré-contagem | Contagem subestima ainda mais (5–7 grãos a menos) |
+| Sem filtro de frequência | sobe pra ~0.51 — na média não muda o IoU; mantenho pela estabilidade do SLIC/Otsu e porque o enunciado pede frequência |
+| Sem gate(L\*) | sobe pra ~0.51 na média, mas as vinhetas pioram (1113 0.509→0.477, 1141 0.412→0.377) |
+| Sem fill_holes | ~0.477 — quase não muda (poucos buracos internos) |
+| Sem `max_area` no filtro | cai pra ~0.39 — por causa do 1105 (0.517→0.078: o anel da placa vaza) |
+| Sem erosão pré-contagem | piora a contagem (não o IoU) nos clusters de grãos colados |
 
 ### 7.4 Possíveis melhorias futuras
 
