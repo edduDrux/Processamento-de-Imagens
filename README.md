@@ -1,6 +1,6 @@
 # Trabalho da M2 de Processamento de Imagens
 
-**Autor:** Eduardo Drux e Candido Neto
+**Autores:** Eduardo Sartori e Candido Fachini
 **Disciplina:** Processamento de Imagens — UNIVALI
 **Professor:** Felipe Viel
 
@@ -10,7 +10,13 @@
 
 ## Fluxo de segmentação
 
-**SLIC Superpixels + Otsu por Superpixel** (ambos implementados _from scratch_).
+O algoritmo de segmentação é o **Otsu por Superpixel** (_from scratch_): tiro a média da
+feature dentro de cada superpixel e separo grão de fundo pelo limiar do Otsu. Os
+superpixels quem gera é o **SLIC**, que também fiz na mão.
+
+O SLIC não conta como um segundo algoritmo de segmentação — ele só monta os superpixels
+que o Otsu por Superpixel usa de entrada (sozinho ele só dá oversegmentação, não uma
+máscara grão/fundo).
 
 ```
 RGB → LAB → FFT passa-baixa no b* → feature warmth = b*·gate(L*)
